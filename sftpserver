@@ -1,0 +1,62 @@
+Preparing the server 
+
+  groupadd sftpusers 
+
+  mkdir /sftp 
+
+
+
+  Modify the /etc/ssh/sshd_config file and add the following lines: 
+
+  Subsystem sftp internal-sftp  
+  Match Group sftpusers 
+  ChrootDirectory /sftp/%u  
+  X11Forwarding no 
+  AllowTcpForwarding no 
+  ForceCommand internal-sftp 
+
+ 
+
+ 
+
+Adding user with shell 
+  cat <<EOF > add_user.sh
+  #!/bin/bash
+  # Purpose - Script to add a user to Linux system including passsword
+  # Author - Vivek Gite <www.cyberciti.biz> under GPL v2.0+
+  # ------------------------------------------------------------------
+  # Am i Root user?
+  if [ $(id -u) -eq 0 ]; then
+          read -p "Enter SFTP username : " username
+          read -s -p "Enter password : " password
+          egrep "^$username" /etc/passwd >/dev/null
+          if [ $? -eq 0 ]; then
+                  echo "$username exists!"
+                  exit 1
+          else
+                  pass=$(perl -e 'print crypt($ARGV[0], "password")' $password)
+                  useradd -g sftpusers -s /bin/false -m -d /sftp/"$username" -p "$pass"  "$username" && chown root:root -R /sftp/"$username" && chmod 755 -R /sftp/"$username" && mkdir /sftp/"$username"/public && chmod 777 /sftp/"$username"/public
+
+                  [ $? -eq 0 ] && echo "User has been added to system!" || echo "Failed to add a user!"
+          fi
+  else
+          echo "Only root may add a user to the system."
+          exit 2
+  fi
+  ~    
+  EOF
+  chmod +x add_user.sh
+  root@sftptest:~# ./add_user.sh
+  Enter SFTP username : sftptest1
+  Enter password :
+  User has been added to system! 
+
+ 
+
+ 
+
+ 
+
+Delete User 
+
+  userdel –r username 
